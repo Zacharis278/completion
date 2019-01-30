@@ -9,6 +9,8 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.utils.translation import ugettext as _
 from django.db import DatabaseError
 
+from xmodule.modulestore.django import modulestore
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
@@ -211,7 +213,9 @@ class UserCompletionView(APIView):
         return {
             'block_key': unicode(block.block_key),
             'block_type': block.block_type,
-            'course_name': course_name
+            'block_name': modulestore().get_item(block.block_key).display_name,
+            'course_name': modulestore().get_course(block.course_key)
+            .display_name
         }
 
 class SubsectionCompletionView(APIView):
