@@ -187,8 +187,32 @@ class UserCompletionView(APIView):
 
     def get(self, request, username):
         user_id = User.objects.get(username=username).id
-        completions = BlockCompletion.user_completion_blocks(user_id)
-        return Response({"completions": []}, status=status.HTTP_200_OK)
+        completions = {}
+
+        for block in BlockCompletion.user_completion_blocks(user_id):
+            d = block.created.date().isoformat()
+            if (d not in completions):
+                completions[d] = {
+                    "date": d,
+                    "count": 0,
+                    "blocks": []
+                }
+            completions[d].get('blocks').append(
+                self._serialize_completion_block(
+                    block,
+                    'todo course name'
+                )
+            )
+            completions[d]['count'] += 1
+
+        return Response({"completions_by_date": completions.values()}, status=status.HTTP_200_OK)
+
+    def _serialize_completion_block(self, block, course_name):
+        return {
+            'block_key': unicode(block.block_key),
+            'block_type': block.block_type,
+            'course_name': course_name
+        }
 
 class SubsectionCompletionView(APIView):
     """

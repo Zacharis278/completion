@@ -213,7 +213,7 @@ class BlockCompletion(TimeStampedModel, models.Model):
         """
         Document Me!
         """
-        return cls.objects.filter(user=user)
+        return cls.objects.filter(user=user).order_by('created')
 
     @classmethod
     def get_course_completions(cls, user, course_key):
