@@ -209,6 +209,13 @@ class BlockCompletion(TimeStampedModel, models.Model):
         return self.block_key
 
     @classmethod
+    def user_completion_blocks(cls, user):
+        """
+        Document Me!
+        """
+        return cls.objects.filter(user=user)
+
+    @classmethod
     def get_course_completions(cls, user, course_key):
         """
         Returns a dictionary mapping BlockKeys to completion values for all

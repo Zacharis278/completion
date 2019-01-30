@@ -176,6 +176,19 @@ class CompletionBatchView(APIView):
 
         return Response({"detail": _("ok")}, status=status.HTTP_200_OK)
 
+class UserCompletionView(APIView):
+    """
+    Does stuff
+    """
+    authentication_classes = (
+        JwtAuthentication, SessionAuthenticationAllowInactiveUser, OAuth2AuthenticationAllowInactiveUser,
+    )
+    permission_classes = (permissions.IsAuthenticated, IsUserInUrl,)
+
+    def get(self, request, username):
+        user_id = User.objects.get(username=username).id
+        completions = BlockCompletion.user_completion_blocks(user_id)
+        return Response({"completions": []}, status=status.HTTP_200_OK)
 
 class SubsectionCompletionView(APIView):
     """

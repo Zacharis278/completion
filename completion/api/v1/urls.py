@@ -11,11 +11,14 @@ from . import views
 app_name = 'v1'  # pylint: disable=invalid-name
 urlpatterns = [
     url(r'^completion-batch', views.CompletionBatchView.as_view(), name='completion-batch'),
-    url(r'^subsection-completion/{username}/{course_key}/{subsection_id}'.format(
-        username=r'(?P<username>[^/]*)',
-        course_key=r'(?P<course_key>[^/+]+(/|\+)[^/+]+(/|\+)[^/?]+)',
-        subsection_id=r'(?P<subsection_id>[^/]*)'
-        ),
-        views.SubsectionCompletionView.as_view(),
-        name='subsection-completion')
+    url(r'^user-completion/{username}'.format(username=r'(?P<username>[^/]*)'),
+        views.UserCompletionView.as_view(),
+        name='user-completion')
+    # url(r'^subsection-completion/{username}/{course_key}/{subsection_id}'.format(
+    #     username=r'(?P<username>[^/]*)',
+    #     course_key=r'(?P<course_key>[^/+]+(/|\+)[^/+]+(/|\+)[^/?]+)',
+    #     subsection_id=r'(?P<subsection_id>[^/]*)'
+    #     ),
+    #     views.SubsectionCompletionView.as_view(),
+    #     name='subsection-completion')
 ]
