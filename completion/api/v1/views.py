@@ -16,6 +16,9 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from rest_framework import status
 
+from datetime import date, timedelta
+from operator import itemgetter
+
 from edx_rest_framework_extensions.auth.jwt.authentication import JwtAuthentication
 from edx_rest_framework_extensions.auth.session.authentication import SessionAuthenticationAllowInactiveUser
 from opaque_keys.edx.keys import CourseKey, UsageKey
@@ -189,27 +192,72 @@ class UserCompletionView(APIView):
 
     def get(self, request, username):
         user_id = User.objects.get(username=username).id
-        completions = {}
+        completions = []
+        streak_max = 0
+        streak_max_end = date.today()
+        current_comp = None
 
+        completion_count = 0
+        streak_count = 1
+        streak_date = None
         for block in BlockCompletion.user_completion_blocks(user_id):
-            d = block.created.date().isoformat()
-            if (d not in completions):
-                completions[d] = {
-                    "date": d,
-                    "count": 0,
-                    "blocks": []
-                }
-            completions[d].get('blocks').append(
-                self._serialize_completion_block(
-                    block,
-                    'todo course name'
+            block_date = block.created.date()
+            completion_count += 1
+
+            if streak_date == block_date:
+                current_comp.get('blocks').append(
+                    self._serialize_completion_block(block)
                 )
-            )
-            completions[d]['count'] += 1
+                current_comp['count'] += 1
+                continue
+            else:
+                if current_comp:
+                    completions.append(current_comp)
+                current_comp = {
+                    "date": block_date.isoformat(),
+                    "count": 1,
+                    "blocks": [self._serialize_completion_block(block)]
+                }
 
-        return Response({"completions_by_date": completions.values()}, status=status.HTTP_200_OK)
+            if (not streak_date or block_date != streak_date + timedelta(days=1)):
+                streak_date = block_date
+                streak_count = 1
+            else:
+                streak_date = block_date
+                streak_count += 1
+                if streak_count > streak_max:
+                    streak_max = streak_count
+                    streak_max_end = streak_date
 
-    def _serialize_completion_block(self, block, course_name):
+        completions.append(current_comp)
+
+        if streak_date == date.today():
+            current_streak = {
+                "count": streak_count,
+                "start_date": date.today() -
+                timedelta(days=streak_count-1),
+                "end_date": date.today()
+            }
+        else:
+            current_streak = None
+
+        return Response({
+            "meta": {
+                "start_date": "YYYY-MM-DD (TODO)",
+                "end_date": "YYYY-MM-DD (TODO)",
+                "total_completions": completion_count,
+                "longest_streak": {
+                    "count": streak_max,
+                    "start_date": streak_max_end -
+                    timedelta(days=streak_max-1),
+                    "end_date": streak_max_end
+                },
+                "current_streak": current_streak
+            },
+            "completions": completions
+        }, status=status.HTTP_200_OK)
+
+    def _serialize_completion_block(self, block):
         return {
             'block_key': unicode(block.block_key),
             'block_type': block.block_type,
